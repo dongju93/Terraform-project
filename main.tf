@@ -1,8 +1,8 @@
 # 기본 연결
 provider "aws" {
   region     = "ap-northeast-2"
-  access_key = ACCESS_KEY
-  secret_key = SECRET_KEY
+  access_key = var.ACCESS_KEY
+  secret_key = var.SECRET_KEY
 }
 
 # EC2 deploy
@@ -125,6 +125,14 @@ resource "aws_security_group" "allow_web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "FTP"
+    from_port   = 21
+    to_port     = 21
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # Outbound 규칙
   egress {
     from_port = 0
@@ -172,7 +180,7 @@ resource "aws_eip" "one" {
 
 # 9. 우분투 서버 생성 후 apache2 설치 및 활성화
 resource "aws_instance" "web_server_instance" {
-  ami           = "ami-0c9c942bd7bf113a2"
+  ami           = "ami-0b7c737f668580ff1"
   instance_type = "t2.micro"
   # Subnet과 동일한 availability_zone으로 하드코딩
   # 미기재 시 때때로 AWS는 availability_zone을 가용가능한 랜덤 지역으로 배정함
@@ -188,12 +196,18 @@ resource "aws_instance" "web_server_instance" {
 
   # Apache 설치 및 활성화
   # 어떤 커맨드라도 가능, EOF 안에 기재
-  user_data = <<-EOF
+  # user_data = <<-EOF
+  #     #!/bin/bash
+  #     sudo apt update -y
+  #     sudo apt install apache2 -y
+  #     sudo systemctl start apache2
+  #     sudo bash -c 'echo my fist web server > /var/www/html/index.html'
+  #   EOF
+    user_data = <<-EOF
       #!/bin/bash
-      sudo apt update -y
-      sudo apt install apache2 -y
-      sudo systemctl start apache2
-      sudo bash -c 'echo my fist web server > /var/www/html/index.html'
+      sudo yum update -y
+      sudo yum install nginx -y
+      sudo systemctl start nginx
     EOF
 
   tags = {
